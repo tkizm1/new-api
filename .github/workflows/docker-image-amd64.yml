@@ -39,7 +39,6 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            tkizm1/new-api
             ghcr.io/${{ github.repository }}
 
       - name: Build and push Docker images
