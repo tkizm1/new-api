@@ -129,8 +129,6 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		errMsgNewConversationEn = "create a new conversation to continue"
 	)
 	switch {
-	case strings.HasPrefix(textRequest.Model, "gpt-3.5-turbo") && promptTokens > 1000:
-		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
 	case strings.HasPrefix(textRequest.Model, "gpt-4") && promptTokens > 32000:
 		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
 	case strings.HasPrefix(textRequest.Model, "claude-3-") && promptTokens > 30000:
