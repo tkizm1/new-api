@@ -120,6 +120,33 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		preConsumedQuota = int(modelPrice * common.QuotaPerUnit * groupRatio)
 	}
 
+	//token数计算
+	// 针对gpt类型的,可以设置长一点的限制
+	println("textRequest.Model", textRequest.Model)
+	println("promptTokens", promptTokens)
+	if strings.HasPrefix(textRequest.Model, "gpt-3.5-turbo") {
+		if promptTokens > 1000 {
+			err := errors.New("开新话题继续")
+			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
+		}
+	}
+	if strings.HasPrefix(textRequest.Model, "gpt-4") {
+		if promptTokens > 32000 {
+			err := errors.New("开新话题继续")
+			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
+		}
+	} else if strings.HasPrefix(textRequest.Model, "claude-3-") {
+		if promptTokens > 30000 {
+			err := errors.New("开新话题继续")
+			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
+		}
+	} else if strings.HasPrefix(textRequest.Model, "claude-2.1") {
+		if promptTokens > 17700 {
+			err := errors.New("开新话题继续")
+			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
+		}
+	}
+
 	// pre-consume quota 预消耗配额
 	preConsumedQuota, userQuota, openaiErr := preConsumeQuota(c, preConsumedQuota, relayInfo)
 	if openaiErr != nil {
