@@ -124,27 +124,19 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	// 针对gpt类型的,可以设置长一点的限制
 	println("textRequest.Model", textRequest.Model)
 	println("promptTokens", promptTokens)
-	if strings.HasPrefix(textRequest.Model, "gpt-3.5-turbo") {
-		if promptTokens > 1000 {
-			err := errors.New("开新话题继续")
-			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
-		}
-	}
-	if strings.HasPrefix(textRequest.Model, "gpt-4") {
-		if promptTokens > 32000 {
-			err := errors.New("开新话题继续")
-			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
-		}
-	} else if strings.HasPrefix(textRequest.Model, "claude-3-") {
-		if promptTokens > 30000 {
-			err := errors.New("开新话题继续")
-			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
-		}
-	} else if strings.HasPrefix(textRequest.Model, "claude-2.1") {
-		if promptTokens > 17700 {
-			err := errors.New("开新话题继续")
-			return service.OpenAIErrorWrapperLocal(err, "create a new conversation to continue", http.StatusBadRequest)
-		}
+	const (
+		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
+		errMsgNewConversationEn = "create a new conversation to continue"
+	)
+	switch {
+	case strings.HasPrefix(textRequest.Model, "gpt-3.5-turbo") && promptTokens > 1000:
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	case strings.HasPrefix(textRequest.Model, "gpt-4") && promptTokens > 32000:
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	case strings.HasPrefix(textRequest.Model, "claude-3-") && promptTokens > 30000:
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	case strings.HasPrefix(textRequest.Model, "claude-2.1") && promptTokens > 17700:
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
 	}
 
 	// pre-consume quota 预消耗配额
