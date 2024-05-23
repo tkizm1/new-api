@@ -1,6 +1,9 @@
 package dto
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 type ResponseFormat struct {
 	Type string `json:"type,omitempty"`
@@ -49,7 +52,22 @@ type OpenAIFunction struct {
 }
 
 func (r GeneralOpenAIRequest) GetMaxTokens() int64 {
-	return int64(r.MaxTokens)
+	// 针对gpt类型的,可以设置长一点的限制
+	defaultMax := int64(r.MaxTokens)
+	if strings.HasPrefix(r.Model,"gpt-4"){
+		if defaultMax>32000{
+			return 32000
+		}
+	}else if strings.HasPrefix(r.Model,"claude-3-"){
+		if defaultMax>30000{
+			return 30000
+		}
+	}else if strings.HasPrefix(r.Model,"claude-2.1"){
+		if defaultMax>17700{
+			return 17700
+		}
+	}
+	return defaultMax
 }
 
 func (r GeneralOpenAIRequest) ParseInput() []string {
