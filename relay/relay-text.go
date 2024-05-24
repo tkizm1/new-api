@@ -111,7 +111,30 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	if err != nil {
 		return service.OpenAIErrorWrapper(err, "count_token_messages_failed", http.StatusInternalServerError)
 	}
-
+	//token数计算
+	// 针对gpt类型的,可以设置长一点的限制
+	println("textRequest.Model", textRequest.Model)
+	println("promptTokens", promptTokens)
+	const (
+		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
+		errMsgNewConversationEn = "create a new conversation to continue"
+	)
+	var maxPromptTokens int
+	var flag = false
+	switch {
+	case strings.HasPrefix(textRequest.Model, "gpt-4"):
+		maxPromptTokens = 32000
+		flag = true
+	case strings.HasPrefix(textRequest.Model, "claude-3-"):
+		maxPromptTokens = 30000
+		flag = true
+	case strings.HasPrefix(textRequest.Model, "claude-2.1"):
+		maxPromptTokens = 17700
+		flag = true
+	}
+	if flag && promptTokens > maxPromptTokens {
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	}
 	if !success {
 		preConsumedTokens := common.PreConsumedQuota
 		if textRequest.MaxTokens != 0 {
