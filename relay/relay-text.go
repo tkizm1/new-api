@@ -120,22 +120,9 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		preConsumedQuota = int(modelPrice * common.QuotaPerUnit * groupRatio)
 	}
 
-	//token数计算
-	// 针对gpt类型的,可以设置长一点的限制
-	println("textRequest.Model", textRequest.Model)
-	println("promptTokens", promptTokens)
-	textRequest.MaxTokens = uint(promptTokens + 4000) // 4000是为了防止一些特殊情况
-	const (
-		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
-		errMsgNewConversationEn = "create a new conversation to continue"
-	)
-	switch {
-	case strings.HasPrefix(textRequest.Model, "gpt-4") && promptTokens > 32000:
-		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
-	case strings.HasPrefix(textRequest.Model, "claude-3-") && promptTokens > 30000:
-		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
-	case strings.HasPrefix(textRequest.Model, "claude-2.1") && promptTokens > 17700:
-		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	code := checkMaxToken(textRequest, promptTokens)
+	if code != nil {
+		return code
 	}
 
 	// pre-consume quota 预消耗配额
@@ -197,6 +184,33 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		return openaiErr
 	}
 	postConsumeQuota(c, relayInfo, *textRequest, usage, ratio, preConsumedQuota, userQuota, modelRatio, groupRatio, modelPrice, success)
+	return nil
+}
+
+func checkMaxToken(textRequest *dto.GeneralOpenAIRequest, promptTokens int) *dto.OpenAIErrorWithStatusCode {
+	//token数计算
+	// 针对gpt类型的,可以设置长一点的限制
+	println("textRequest.Model", textRequest.Model)
+	println("promptTokens", promptTokens)
+	const (
+		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
+		errMsgNewConversationEn = "create a new conversation to continue"
+	)
+	var maxPromptTokens int
+	switch {
+	case strings.HasPrefix(textRequest.Model, "gpt-4"):
+		textRequest.MaxTokens = 4000
+		maxPromptTokens = 32000
+	case strings.HasPrefix(textRequest.Model, "claude-3-"):
+		textRequest.MaxTokens = 4000
+		maxPromptTokens = 30000
+	case strings.HasPrefix(textRequest.Model, "claude-2.1"):
+		textRequest.MaxTokens = 4000
+		maxPromptTokens = 17700
+	}
+	if promptTokens > maxPromptTokens {
+		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
+	}
 	return nil
 }
 
