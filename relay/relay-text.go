@@ -197,18 +197,19 @@ func checkMaxToken(textRequest *dto.GeneralOpenAIRequest, promptTokens int) *dto
 		errMsgNewConversationEn = "create a new conversation to continue"
 	)
 	var maxPromptTokens int
+	var flag = false
 	switch {
 	case strings.HasPrefix(textRequest.Model, "gpt-4"):
-		textRequest.MaxTokens = 4000
 		maxPromptTokens = 32000
+		flag = true
 	case strings.HasPrefix(textRequest.Model, "claude-3-"):
-		textRequest.MaxTokens = 4000
 		maxPromptTokens = 30000
+		flag = true
 	case strings.HasPrefix(textRequest.Model, "claude-2.1"):
-		textRequest.MaxTokens = 4000
 		maxPromptTokens = 17700
+		flag = true
 	}
-	if promptTokens > maxPromptTokens {
+	if flag && promptTokens > maxPromptTokens {
 		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
 	}
 	return nil
