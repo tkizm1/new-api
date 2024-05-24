@@ -98,13 +98,17 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	var ratio float64
 	var modelRatio float64
 	//err := service.SensitiveWordsCheck(textRequest)
-	promptTokens, err, sensitiveTrigger := getPromptTokens(textRequest, relayInfo)
 
-	// count messages token error 计算promptTokens错误
-	if err != nil {
-		if sensitiveTrigger {
+	if constant.ShouldCheckPromptSensitive() {
+		err = checkRequestSensitive(textRequest, relayInfo)
+		if err != nil {
 			return service.OpenAIErrorWrapperLocal(err, "sensitive_words_detected", http.StatusBadRequest)
 		}
+	}
+
+	promptTokens, err := getPromptTokens(textRequest, relayInfo)
+	// count messages token error 计算promptTokens错误
+	if err != nil {
 		return service.OpenAIErrorWrapper(err, "count_token_messages_failed", http.StatusInternalServerError)
 	}
 
@@ -120,11 +124,6 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		preConsumedQuota = int(modelPrice * common.QuotaPerUnit * groupRatio)
 	}
 
-	code := checkMaxToken(textRequest, promptTokens)
-	if code != nil {
-		return code
-	}
-
 	// pre-consume quota 预消耗配额
 	preConsumedQuota, userQuota, openaiErr := preConsumeQuota(c, preConsumedQuota, relayInfo)
 	if openaiErr != nil {
@@ -133,7 +132,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 
 	adaptor := GetAdaptor(relayInfo.ApiType)
 	if adaptor == nil {
-		return service.OpenAIErrorWrapper(fmt.Errorf("invalid api type: %d", relayInfo.ApiType), "invalid_api_type", http.StatusBadRequest)
+		return service.OpenAIErrorWrapperLocal(fmt.Errorf("invalid api type: %d", relayInfo.ApiType), "invalid_api_type", http.StatusBadRequest)
 	}
 	adaptor.Init(relayInfo, *textRequest)
 	var requestBody io.Reader
@@ -141,7 +140,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		if isModelMapped {
 			jsonStr, err := json.Marshal(textRequest)
 			if err != nil {
-				return service.OpenAIErrorWrapper(err, "marshal_text_request_failed", http.StatusInternalServerError)
+				return service.OpenAIErrorWrapperLocal(err, "marshal_text_request_failed", http.StatusInternalServerError)
 			}
 			requestBody = bytes.NewBuffer(jsonStr)
 		} else {
@@ -150,11 +149,11 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	} else {
 		convertedRequest, err := adaptor.ConvertRequest(c, relayInfo.RelayMode, textRequest)
 		if err != nil {
-			return service.OpenAIErrorWrapper(err, "convert_request_failed", http.StatusInternalServerError)
+			return service.OpenAIErrorWrapperLocal(err, "convert_request_failed", http.StatusInternalServerError)
 		}
 		jsonData, err := json.Marshal(convertedRequest)
 		if err != nil {
-			return service.OpenAIErrorWrapper(err, "json_marshal_failed", http.StatusInternalServerError)
+			return service.OpenAIErrorWrapperLocal(err, "json_marshal_failed", http.StatusInternalServerError)
 		}
 		requestBody = bytes.NewBuffer(jsonData)
 	}
@@ -187,62 +186,39 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	return nil
 }
 
-func checkMaxToken(textRequest *dto.GeneralOpenAIRequest, promptTokens int) *dto.OpenAIErrorWithStatusCode {
-	//token数计算
-	// 针对gpt类型的,可以设置长一点的限制
-	println("textRequest.Model", textRequest.Model)
-	println("promptTokens", promptTokens)
-	const (
-		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
-		errMsgNewConversationEn = "create a new conversation to continue"
-	)
-	var maxPromptTokens int
-	var flag = false
-	switch {
-	case strings.HasPrefix(textRequest.Model, "gpt-4"):
-		maxPromptTokens = 32000
-		flag = true
-	case strings.HasPrefix(textRequest.Model, "claude-3-"):
-		maxPromptTokens = 30000
-		flag = true
-	case strings.HasPrefix(textRequest.Model, "claude-2.1"):
-		maxPromptTokens = 17700
-		flag = true
-	}
-	if flag && promptTokens > maxPromptTokens {
-		return service.OpenAIErrorWrapperLocal(errors.New(errMsgNewConversation), errMsgNewConversationEn, http.StatusBadRequest)
-	}
-	return nil
-}
-
-func getPromptTokens(textRequest *dto.GeneralOpenAIRequest, info *relaycommon.RelayInfo) (int, error, bool) {
+func getPromptTokens(textRequest *dto.GeneralOpenAIRequest, info *relaycommon.RelayInfo) (int, error) {
 	var promptTokens int
 	var err error
-	var sensitiveTrigger bool
-	checkSensitive := constant.ShouldCheckPromptSensitive()
 	switch info.RelayMode {
 	case relayconstant.RelayModeChatCompletions:
-		promptTokens, err, sensitiveTrigger = service.CountTokenChatRequest(*textRequest, textRequest.Model, checkSensitive)
+		promptTokens, err = service.CountTokenChatRequest(*textRequest, textRequest.Model)
 	case relayconstant.RelayModeCompletions:
-		prompts := textRequest.Prompt
-		switch v := prompts.(type) {
-		case string:
-			prompts = v + textRequest.Suffix
-		case []string:
-			prompts = append(v, textRequest.Suffix)
-		}
-
-		promptTokens, err, sensitiveTrigger = service.CountTokenInput(prompts, textRequest.Model, checkSensitive)
+		promptTokens, err = service.CountTokenInput(textRequest.Prompt, textRequest.Model)
 	case relayconstant.RelayModeModerations:
-		promptTokens, err, sensitiveTrigger = service.CountTokenInput(textRequest.Input, textRequest.Model, checkSensitive)
+		promptTokens, err = service.CountTokenInput(textRequest.Input, textRequest.Model)
 	case relayconstant.RelayModeEmbeddings:
-		promptTokens, err, sensitiveTrigger = service.CountTokenInput(textRequest.Input, textRequest.Model, checkSensitive)
+		promptTokens, err = service.CountTokenInput(textRequest.Input, textRequest.Model)
 	default:
 		err = errors.New("unknown relay mode")
 		promptTokens = 0
 	}
 	info.PromptTokens = promptTokens
-	return promptTokens, err, sensitiveTrigger
+	return promptTokens, err
+}
+
+func checkRequestSensitive(textRequest *dto.GeneralOpenAIRequest, info *relaycommon.RelayInfo) error {
+	var err error
+	switch info.RelayMode {
+	case relayconstant.RelayModeChatCompletions:
+		err = service.CheckSensitiveMessages(textRequest.Messages)
+	case relayconstant.RelayModeCompletions:
+		err = service.CheckSensitiveInput(textRequest.Prompt)
+	case relayconstant.RelayModeModerations:
+		err = service.CheckSensitiveInput(textRequest.Input)
+	case relayconstant.RelayModeEmbeddings:
+		err = service.CheckSensitiveInput(textRequest.Input)
+	}
+	return err
 }
 
 // 预扣费并返回用户剩余配额
@@ -355,9 +331,6 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, textRe
 	if strings.HasPrefix(logModel, "gpt-4-gizmo") {
 		logModel = "gpt-4-gizmo-*"
 		logContent += fmt.Sprintf("，模型 %s", textRequest.Model)
-	} else if strings.HasPrefix(logModel, "g-") {
-		logModel = "g-*"
-		logContent += fmt.Sprintf("，模型 %s", textRequest.Model)
 	}
 	other := make(map[string]interface{})
 	other["model_ratio"] = modelRatio
@@ -367,7 +340,6 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, textRe
 	adminInfo := make(map[string]interface{})
 	adminInfo["use_channel"] = ctx.GetStringSlice("use_channel")
 	other["admin_info"] = adminInfo
-	common.LogInfo(ctx, fmt.Sprintf("requestBody %s", textRequest.Messages))
 	model.RecordConsumeLog(ctx, relayInfo.UserId, relayInfo.ChannelId, promptTokens, completionTokens, logModel, tokenName, quota, logContent, relayInfo.TokenId, userQuota, int(useTimeSeconds), relayInfo.IsStream, other)
 
 	//if quota != 0 {
