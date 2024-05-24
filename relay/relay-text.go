@@ -124,6 +124,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	// 针对gpt类型的,可以设置长一点的限制
 	println("textRequest.Model", textRequest.Model)
 	println("promptTokens", promptTokens)
+	textRequest.MaxTokens = uint(promptTokens + 4000) // 4000是为了防止一些特殊情况
 	const (
 		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
 		errMsgNewConversationEn = "create a new conversation to continue"
