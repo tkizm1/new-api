@@ -14,6 +14,7 @@ func CheckSensitiveMessages(messages []dto.Message) error {
 		if len(message.Content) > 0 {
 			if message.IsStringContent() {
 				stringContent := message.StringContent()
+				println("stringContent", stringContent)
 				if ok, words := SensitiveWordContains(stringContent); ok {
 					return errors.New("sensitive words: " + strings.Join(words, ","))
 				}
