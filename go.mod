@@ -26,6 +26,7 @@ require (
 	github.com/stripe/stripe-go/v76 v76.21.0
 	golang.org/x/crypto v0.21.0
 	golang.org/x/image v0.15.0
+	golang.org/x/net v0.21.0
 	gorm.io/driver/mysql v1.4.3
 	gorm.io/driver/postgres v1.5.2
 	gorm.io/driver/sqlite v1.4.3
@@ -74,7 +75,6 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect
-	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

@@ -180,7 +180,13 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		}
 		requestBody = bytes.NewBuffer(jsonData)
 	}
-
+	//print content io.Reader()
+	buf := new(strings.Builder)
+	_, err = io.Copy(buf, requestBody)
+	//buf.ReadFrom(requestBody)
+	println("request content: ", buf.String())
+	requestBody = strings.NewReader(buf.String())
+	//println("requestBody", requestBody)
 	statusCodeMappingStr := c.GetString("status_code_mapping")
 	resp, err := adaptor.DoRequest(c, relayInfo, requestBody)
 	if err != nil {
