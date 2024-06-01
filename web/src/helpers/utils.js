@@ -225,7 +225,6 @@ export function verifyJSONPromise(value) {
   }
 }
 
-
 export function shouldShowPrompt(id) {
   let prompt = localStorage.getItem(`prompt-${id}`);
   return !prompt;

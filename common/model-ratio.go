@@ -22,39 +22,38 @@ const (
 
 var defaultModelRatio = map[string]float64{
 	//"midjourney":                50,
-	"gpt-4-gizmo-*": 15,
-	"gpt-4-all":     15,
-	"gpt-4o-all":    15,
-	"gpt-4":         15,
-	//"gpt-4-0314":                   15, //deprecated
-	"gpt-4-0613": 15,
-	"gpt-4-32k":  30,
-	//"gpt-4-32k-0314":               30, //deprecated
-	"gpt-4-32k-0613":            30,
-	"gpt-4-1106-preview":        5,    // $0.01 / 1K tokens
-	"gpt-4-0125-preview":        5,    // $0.01 / 1K tokens
-	"gpt-4-turbo-preview":       5,    // $0.01 / 1K tokens
-	"gpt-4-vision-preview":      5,    // $0.01 / 1K tokens
-	"gpt-4-1106-vision-preview": 5,    // $0.01 / 1K tokens
-	"gpt-4o":                    2.5,  // $0.01 / 1K tokens
-	"gpt-4o-2024-05-13":         2.5,  // $0.01 / 1K tokens
-	"gpt-4-turbo":               5,    // $0.01 / 1K tokens
-	"gpt-4-turbo-2024-04-09":    5,    // $0.01 / 1K tokens
-	"gpt-3.5-turbo":             0.25, // $0.0015 / 1K tokens
-	//"gpt-3.5-turbo-0301":           0.75, //deprecated
-	"gpt-3.5-turbo-0613":     0.75,
-	"gpt-3.5-turbo-16k":      1.5, // $0.003 / 1K tokens
-	"gpt-3.5-turbo-16k-0613": 1.5,
-	"gpt-3.5-turbo-instruct": 0.75, // $0.0015 / 1K tokens
-	"gpt-3.5-turbo-1106":     0.5,  // $0.001 / 1K tokens
-	"gpt-3.5-turbo-0125":     0.25,
-	"babbage-002":            0.2, // $0.0004 / 1K tokens
-	"davinci-002":            1,   // $0.002 / 1K tokens
-	"text-ada-001":           0.2,
-	"text-babbage-001":       0.25,
-	"text-curie-001":         1,
-	//"text-davinci-002":               10,
-	//"text-davinci-003":               10,
+	"gpt-4-gizmo-*":                  15,
+	"g-*":                            15,
+	"gpt-4":                          15,
+	"gpt-4-0314":                     15,
+	"gpt-4-0613":                     15,
+	"gpt-4-32k":                      30,
+	"gpt-4-32k-0314":                 30,
+	"gpt-4-32k-0613":                 30,
+	"gpt-4o":                         2.5,  // $0.005 / 1K tokens
+	"gpt-4o-2024-05-13":              2.5,  // $0.005 / 1K tokens
+	"gpt-4-turbo":                    5,    // $0.01 / 1K tokens
+	"gpt-4-turbo-2024-04-09":         5,    // $0.01 / 1K tokens
+	"gpt-4-1106-preview":             5,    // $0.01 / 1K tokens
+	"gpt-4-0125-preview":             5,    // $0.01 / 1K tokens
+	"gpt-4-turbo-preview":            5,    // $0.01 / 1K tokens
+	"gpt-4-vision-preview":           5,    // $0.01 / 1K tokens
+	"gpt-4-1106-vision-preview":      5,    // $0.01 / 1K tokens
+	"gpt-3.5-turbo":                  0.25, // $0.0005 / 1K tokens
+	"gpt-3.5-turbo-0301":             0.75,
+	"gpt-3.5-turbo-0613":             0.75,
+	"gpt-3.5-turbo-16k":              1.5, // $0.003 / 1K tokens
+	"gpt-3.5-turbo-16k-0613":         1.5,
+	"gpt-3.5-turbo-instruct":         0.75, // $0.0015 / 1K tokens
+	"gpt-3.5-turbo-1106":             0.5,  // $0.001 / 1K tokens
+	"gpt-3.5-turbo-0125":             0.25,
+	"babbage-002":                    0.2, // $0.0004 / 1K tokens
+	"davinci-002":                    1,   // $0.002 / 1K tokens
+	"text-ada-001":                   0.2,
+	"text-babbage-001":               0.25,
+	"text-curie-001":                 1,
+	"text-davinci-002":               10,
+	"text-davinci-003":               10,
 	"text-davinci-edit-001":          10,
 	"code-davinci-edit-001":          10,
 	"whisper-1":                      15,  // $0.006 / minute -> $0.006 / 150 words -> $0.006 / 200 tokens -> $0.03 / 1k tokens
@@ -152,8 +151,10 @@ var defaultModelRatio = map[string]float64{
 }
 
 var defaultModelPrice = map[string]float64{
+	"dall-e-2":          0.02,
 	"dall-e-3":          0.04,
 	"gpt-4-gizmo-*":     0.1,
+	"g-*":               0.1,
 	"mj_imagine":        0.1,
 	"mj_variation":      0.1,
 	"mj_reroll":         0.1,
@@ -177,7 +178,9 @@ var modelRatio map[string]float64 = nil
 var CompletionRatio map[string]float64 = nil
 var defaultCompletionRatio = map[string]float64{
 	"gpt-4-gizmo-*": 2,
+	"g-*":           2,
 	"gpt-4-all":     2,
+	"gpt-4o-all":    2,
 }
 
 func ModelPrice2JSONString() string {
@@ -203,6 +206,8 @@ func GetModelPrice(name string, printErr bool) (float64, bool) {
 	}
 	if strings.HasPrefix(name, "gpt-4-gizmo") {
 		name = "gpt-4-gizmo-*"
+	} else if strings.HasPrefix(name, "g-") {
+		name = "g-*"
 	}
 	price, ok := modelPrice[name]
 	if !ok {
@@ -243,6 +248,8 @@ func GetModelRatio(name string) float64 {
 	}
 	if strings.HasPrefix(name, "gpt-4-gizmo") {
 		name = "gpt-4-gizmo-*"
+	} else if strings.HasPrefix(name, "g-") {
+		name = "g-*"
 	}
 	ratio, ok := modelRatio[name]
 	if !ok {
@@ -283,29 +290,33 @@ func UpdateCompletionRatioByJSONString(jsonStr string) error {
 func GetCompletionRatio(name string) float64 {
 	if strings.HasPrefix(name, "gpt-4-gizmo") {
 		name = "gpt-4-gizmo-*"
+	} else if strings.HasPrefix(name, "g-") {
+		name = "g-*"
 	}
 	if strings.HasPrefix(name, "gpt-3.5") {
-		if name == "gpt-3.5-turbo" || strings.HasSuffix(name, "0125") {
-			// https://openai.com/blog/new-embedding-models-and-api-updates
-			// Updated GPT-3.5 Turbo model and lower pricing
+		if strings.HasSuffix(name, "0125") {
 			return 3
 		}
 		if strings.HasSuffix(name, "1106") {
 			return 2
 		}
+		if name == "gpt-3.5-turbo" {
+			return 3
+		}
+
 		return 4.0 / 3.0
 	}
-	if strings.HasPrefix(name, "gpt-4") && !strings.HasSuffix(name, "-all") && !strings.HasSuffix(name, "-gizmo-*") {
-		if strings.HasPrefix(name, "gpt-4-turbo") || strings.HasSuffix(name, "preview") || strings.HasPrefix(name, "gpt-4o") {
+	if strings.HasPrefix(name, "gpt-4") && name != "gpt-4-all" && name != "gpt-4-gizmo-*" {
+		if strings.HasSuffix(name, "preview") || strings.HasPrefix(name, "gpt-4-turbo") || strings.HasPrefix(name, "gpt-4o") {
 			return 3
 		}
 		return 2
 	}
-	if strings.Contains(name, "claude-instant-1") {
+	if strings.HasPrefix(name, "claude-instant-1") {
 		return 3
-	} else if strings.Contains(name, "claude-2") {
+	} else if strings.HasPrefix(name, "claude-2") {
 		return 3
-	} else if strings.Contains(name, "claude-3") {
+	} else if strings.HasPrefix(name, "claude-3") {
 		return 5
 	}
 	if strings.HasPrefix(name, "mistral-") {
