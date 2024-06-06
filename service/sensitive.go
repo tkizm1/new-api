@@ -19,10 +19,10 @@ func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
 					return errors.New("sensitive words: " + strings.Join(words, ","))
 				}
 			} else {
-				arrayContent := message.ParseContent()
-				for _, m := range arrayContent {
-					if m.Type == "image_url" {
-						if strings.HasPrefix(request.Model, "claude") {
+				if strings.HasPrefix(request.Model, "claude") {
+					arrayContent := message.ParseContent()
+					for _, m := range arrayContent {
+						if m.Type == "image_url" {
 							return errors.New("禁止claude模型发送图片")
 						}
 					}

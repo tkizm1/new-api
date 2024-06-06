@@ -116,7 +116,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	println("textRequest.Model", textRequest.Model)
 	println("promptTokens", promptTokens)
 	const (
-		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制"
+		errMsgNewConversation   = "开新话题聊天，单次聊天内容长度有限制, gemini和command r plus基本没有限制"
 		errMsgNewConversationEn = "create a new conversation to continue"
 	)
 	var maxPromptTokens int
