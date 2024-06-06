@@ -18,6 +18,15 @@ func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
 				if ok, words := SensitiveWordContains(stringContent); ok {
 					return errors.New("sensitive words: " + strings.Join(words, ","))
 				}
+			} else {
+				arrayContent := message.ParseContent()
+				for _, m := range arrayContent {
+					if m.Type == "image_url" {
+						if strings.HasPrefix(request.Model, "claude") {
+							return errors.New("禁止claude模型发送图片")
+						}
+					}
+				}
 			}
 		} else {
 			arrayContent := message.ParseContent()
