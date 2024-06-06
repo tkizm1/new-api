@@ -249,7 +249,7 @@ func checkRequestSensitive(textRequest *dto.GeneralOpenAIRequest, info *relaycom
 	var err error
 	switch info.RelayMode {
 	case relayconstant.RelayModeChatCompletions:
-		err = service.CheckSensitiveMessages(textRequest.Messages)
+		err = service.CheckSensitiveMessages(textRequest)
 	case relayconstant.RelayModeCompletions:
 		err = service.CheckSensitiveInput(textRequest.Prompt)
 	case relayconstant.RelayModeModerations:

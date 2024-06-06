@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-func CheckSensitiveMessages(messages []dto.Message) error {
+func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
+	messages := request.Messages
 	for _, message := range messages {
 		if len(message.Content) > 0 {
 			if message.IsStringContent() {
@@ -22,6 +23,9 @@ func CheckSensitiveMessages(messages []dto.Message) error {
 			arrayContent := message.ParseContent()
 			for _, m := range arrayContent {
 				if m.Type == "image_url" {
+					if strings.HasPrefix(request.Model, "claude") {
+						return errors.New("禁止claude模型发送图片")
+					}
 					// TODO: check image url
 				} else {
 					if ok, words := SensitiveWordContains(m.Text); ok {
