@@ -208,40 +208,22 @@ const UsersTable = () => {
               >
                 编辑
               </Button>
+              <Popconfirm
+                title='确定是否要注销此用户？'
+                content='相当于删除用户，此修改将不可逆'
+                okType={'danger'}
+                position={'left'}
+                onConfirm={() => {
+                  manageUser(record.username, 'delete', record).then(() => {
+                    removeRecord(record.id);
+                  });
+                }}
+              >
+                <Button theme='light' type='danger' style={{ marginRight: 1 }}>
+                  注销
+                </Button>
+              </Popconfirm>
             </>
-          )}
-          {record.DeletedAt !== null ? (
-            <Popconfirm
-              title='确定是否要删除此用户？'
-              content='硬删除，此修改将不可逆'
-              okType={'danger'}
-              position={'left'}
-              onConfirm={() => {
-                hardDeleteUser(record.id).then(() => {
-                  removeRecord(record.id);
-                });
-              }}
-            >
-              <Button theme='light' type='danger' style={{ marginRight: 1 }}>
-                永久删除
-              </Button>
-            </Popconfirm>
-          ) : (
-            <Popconfirm
-              title='确定是否要删除此用户？'
-              content='软删除，数据依然留底'
-              okType={'danger'}
-              position={'left'}
-              onConfirm={() => {
-                manageUser(record.username, 'delete', record).then(() => {
-                  record.DeletedAt = new Date();
-                });
-              }}
-            >
-              <Button theme='light' type='danger' style={{ marginRight: 1 }}>
-                删除
-              </Button>
-            </Popconfirm>
           )}
         </div>
       ),
@@ -271,13 +253,13 @@ const UsersTable = () => {
   };
 
   const removeRecord = (key) => {
-    console.log(key);
     let newDataSource = [...users];
     if (key != null) {
       let idx = newDataSource.findIndex((data) => data.id === key);
 
       if (idx > -1) {
-        newDataSource.splice(idx, 1);
+        // update deletedAt
+        newDataSource[idx].DeletedAt = new Date();
         setUsers(newDataSource);
       }
     }
@@ -339,18 +321,6 @@ const UsersTable = () => {
       setUsers(newUsers);
     } else {
       showError(message);
-      throw new Error(message);
-    }
-  };
-
-  const hardDeleteUser = async (userId) => {
-    const res = await API.delete('/api/user/' + userId);
-    const { success, message } = res.data;
-    if (success) {
-      showSuccess('操作成功完成！');
-    } else {
-      showError(message);
-      throw new Error(message);
     }
   };
 
@@ -381,9 +351,7 @@ const UsersTable = () => {
       return;
     }
     setSearching(true);
-    const res = await API.get(
-      `/api/user/search?keyword=${searchKeyword}&group=${searchGroup}`,
-    );
+    const res = await API.get(`/api/user/search?keyword=${searchKeyword}&group=${searchGroup}`);
     const { success, message, data } = res.data;
     if (success) {
       setUsers(data);
@@ -484,34 +452,34 @@ const UsersTable = () => {
       >
         <div style={{ display: 'flex' }}>
           <Space>
-            <Form.Input
-              label='搜索关键字'
-              icon='search'
-              field='keyword'
-              iconPosition='left'
-              placeholder='搜索用户的 ID，用户名，显示名称，以及邮箱地址 ...'
-              value={searchKeyword}
-              loading={searching}
-              onChange={(value) => handleKeywordChange(value)}
-            />
-            <Form.Select
-              field='group'
-              label='分组'
-              optionList={groupOptions}
-              onChange={(value) => {
-                setSearchGroup(value);
-                searchUsers(searchKeyword, value);
-              }}
-            />
-            <Button
-              label='查询'
-              type='primary'
-              htmlType='submit'
-              className='btn-margin-right'
-              style={{ marginRight: 8 }}
-            >
-              查询
-            </Button>
+          <Form.Input
+            label='搜索关键字'
+            icon='search'
+            field='keyword'
+            iconPosition='left'
+            placeholder='搜索用户的 ID，用户名，显示名称，以及邮箱地址 ...'
+            value={searchKeyword}
+            loading={searching}
+            onChange={(value) => handleKeywordChange(value)}
+          />
+          <Form.Select
+            field='group'
+            label='分组'
+            optionList={groupOptions}
+            onChange={(value) => {
+              setSearchGroup(value);
+              searchUsers(searchKeyword, value);
+            }}
+          />
+          <Button
+            label='查询'
+            type='primary'
+            htmlType='submit'
+            className='btn-margin-right'
+            style={{ marginRight: 8 }}
+          >
+            查询
+          </Button>
           </Space>
         </div>
       </Form>
