@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/linux-do/tiktoken-go"
+	"github.com/pkoukk/tiktoken-go"
 	"image"
 	"log"
 	"math"
@@ -17,7 +17,6 @@ import (
 // tokenEncoderMap won't grow after initialization
 var tokenEncoderMap = map[string]*tiktoken.Tiktoken{}
 var defaultTokenEncoder *tiktoken.Tiktoken
-var cl200kTokenEncoder *tiktoken.Tiktoken
 
 func InitTokenEncoders() {
 	common.SysLog("initializing token encoders")
@@ -30,31 +29,23 @@ func InitTokenEncoders() {
 	if err != nil {
 		common.FatalLog(fmt.Sprintf("failed to get gpt-4 token encoder: %s", err.Error()))
 	}
-	cl200kTokenEncoder, err = tiktoken.EncodingForModel("gpt-4o")
+
+	gpt4oTokenEncoder, err := tiktoken.EncodingForModel("gpt-4o")
 	if err != nil {
 		common.FatalLog(fmt.Sprintf("failed to get gpt-4o token encoder: %s", err.Error()))
 	}
 	for model, _ := range common.GetDefaultModelRatioMap() {
 		if strings.HasPrefix(model, "gpt-3.5") {
 			tokenEncoderMap[model] = gpt35TokenEncoder
+		} else if strings.HasPrefix(model, "gpt-4o") {
+			tokenEncoderMap[model] = gpt4oTokenEncoder
 		} else if strings.HasPrefix(model, "gpt-4") {
-			if strings.HasPrefix(model, "gpt-4o") {
-				tokenEncoderMap[model] = cl200kTokenEncoder
-			} else {
-				tokenEncoderMap[model] = gpt4TokenEncoder
-			}
+			tokenEncoderMap[model] = gpt4TokenEncoder
 		} else {
 			tokenEncoderMap[model] = nil
 		}
 	}
 	common.SysLog("token encoders initialized")
-}
-
-func getModelDefaultTokenEncoder(model string) *tiktoken.Tiktoken {
-	if strings.HasPrefix(model, "gpt-4o") {
-		return cl200kTokenEncoder
-	}
-	return defaultTokenEncoder
 }
 
 func getTokenEncoder(model string) *tiktoken.Tiktoken {
@@ -67,13 +58,12 @@ func getTokenEncoder(model string) *tiktoken.Tiktoken {
 		tokenEncoder, err := tiktoken.EncodingForModel(model)
 		if err != nil {
 			common.SysError(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
-			tokenEncoder = getModelDefaultTokenEncoder(model)
+			tokenEncoder = defaultTokenEncoder
 		}
 		tokenEncoderMap[model] = tokenEncoder
 		return tokenEncoder
 	}
-	// 如果model不在tokenEncoderMap中，直接返回默认的tokenEncoder
-	return getModelDefaultTokenEncoder(model)
+	return defaultTokenEncoder
 }
 
 func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
@@ -96,6 +86,7 @@ func getImageToken(imageUrl *dto.MessageImageUrl, model string, stream bool) (in
 	var err error
 	var format string
 	if strings.HasPrefix(imageUrl.Url, "http") {
+		common.SysLog(fmt.Sprintf("downloading image: %s", imageUrl.Url))
 		config, format, err = common.DecodeUrlImageData(imageUrl.Url)
 	} else {
 		common.SysLog(fmt.Sprintf("decoding image"))
