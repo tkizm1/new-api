@@ -125,7 +125,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	case strings.HasPrefix(textRequest.Model, "gpt-4"):
 		maxPromptTokens = 5000
 		flag = true
-	case strings.HasPrefix(textRequest.Model, "claude-3-5-sonnet-20240620"):
+	case strings.HasPrefix(textRequest.Model, "claude-3-opus-20240229"):
 		maxPromptTokens = 5000
 		flag = true
 	case strings.HasPrefix(textRequest.Model, "claude-2.1"):
