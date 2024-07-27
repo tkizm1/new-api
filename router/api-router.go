@@ -1,11 +1,10 @@
 package router
 
 import (
-	"one-api/controller"
-	"one-api/middleware"
-
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+	"one-api/controller"
+	"one-api/middleware"
 )
 
 func SetApiRouter(router *gin.Engine) {
@@ -41,6 +40,7 @@ func SetApiRouter(router *gin.Engine) {
 			userRoute.POST("/login", middleware.CriticalRateLimit(), middleware.TurnstileCheck(), controller.Login)
 			//userRoute.POST("/tokenlog", middleware.CriticalRateLimit(), controller.TokenLog)
 			userRoute.GET("/logout", controller.Logout)
+			userRoute.POST("/signing", middleware.UserAuth(), controller.Signing)
 
 			selfRoute := userRoute.Group("/")
 			selfRoute.Use(middleware.UserAuth())

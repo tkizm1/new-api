@@ -282,3 +282,33 @@ func GetUserTask(c *gin.Context) {
 		"data":    logs,
 	})
 }
+
+//func RecoveryQuota() {
+//
+//	users, err := model.GetAllUsersByRecoveryQuota()
+//	if err != nil {
+//		common.FatalLog("获取用户列表失败: " + err.Error())
+//	}
+//	for _, user := range users {
+//		// 处理用户数据
+//		user.Quota = user.Quota - 5000
+//		err := user.Update(false)
+//		if err != nil {
+//			common.FatalLog("回收用户额度失败: " + err.Error())
+//		}
+//		message := fmt.Sprintf("因你的最后请求时间(%d)距今(%s)为止超过6天，额度过期，现在回收你的额度 %s ~", user.LastRequestTime, new)
+//		model.RecordLog(user.Id, model.LogTypeSystem, message)
+//	}
+//}
+//
+//func StartTicker() {
+//	ticker := time.NewTicker(3 * time.Second)
+//	defer ticker.Stop()
+//
+//	for {
+//		select {
+//		case <-ticker.C:
+//			RecoveryQuota()
+//		}
+//	}
+//}

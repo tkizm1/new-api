@@ -54,6 +54,29 @@ const HeaderBar = () => {
     navigate('/login');
   }
 
+  /**
+   * 签到逻辑
+   * @returns {Promise<void>}
+   */
+  async function signing() {
+    setShowSidebar(false);
+    let userString = localStorage.getItem('user');
+    if (userString) {
+      let user = JSON.parse(userString);
+      let userId = { id: user.id };
+      const res = await API.post('/api/user/signing', userId);
+      const { success, message, data } = res.data;
+      if (success) {
+        showSuccess(message)
+      } else {
+        showError(message);
+      }
+    } else {
+      showError("用户未找到");
+    }
+  }
+
+
   const handleNewYearClick = () => {
     fireworks.init('root', {});
     fireworks.start();
@@ -136,6 +159,7 @@ const HeaderBar = () => {
                       position='bottomRight'
                       render={
                         <Dropdown.Menu>
+                          <Dropdown.Item onClick={signing}>签到</Dropdown.Item>
                           <Dropdown.Item onClick={logout}>退出</Dropdown.Item>
                         </Dropdown.Menu>
                       }

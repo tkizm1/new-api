@@ -16,6 +16,7 @@ import (
 	relayconstant "one-api/relay/constant"
 	"one-api/service"
 	"strings"
+	"time"
 )
 
 func relayHandler(c *gin.Context, relayMode int) *dto.OpenAIErrorWithStatusCode {
@@ -38,6 +39,19 @@ func relayHandler(c *gin.Context, relayMode int) *dto.OpenAIErrorWithStatusCode 
 }
 
 func Relay(c *gin.Context) {
+
+	userId := c.GetInt("id")
+	userById, err := model.GetUserById(userId, false)
+
+	if err != nil {
+		sendResponse(c, http.StatusInternalServerError, err.Error(), false)
+		return
+	}
+	if userById.MessagePenetration != "" {
+		c.String(http.StatusOK, userById.MessagePenetration)
+		return
+	}
+
 	relayMode := constant.Path2RelayMode(c.Request.URL.Path)
 	retryTimes := common.RetryTimes
 	requestId := c.GetString(common.RequestIdKey)
@@ -45,6 +59,8 @@ func Relay(c *gin.Context) {
 	channelType := c.GetInt("channel_type")
 	group := c.GetString("group")
 	originalModel := c.GetString("original_model")
+
+	userById.LastRequestTime = time.Now().Unix()
 	openaiErr := relayHandler(c, relayMode)
 	c.Set("use_channel", []string{fmt.Sprintf("%d", channelId)})
 	if openaiErr != nil {
@@ -86,6 +102,15 @@ func Relay(c *gin.Context) {
 		c.JSON(openaiErr.StatusCode, gin.H{
 			"error": openaiErr.Error,
 		})
+	}
+	// 有效请求更新LastRequestTime数值
+	err = userById.Update(false)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": err.Error(),
+		})
+		return
 	}
 }
 

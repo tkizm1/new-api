@@ -405,6 +405,36 @@ const LogsTable = () => {
         );
       },
     },
+    {
+      title: 'QA',
+      dataIndex: 'qa',
+      render: (text, record, index) => {
+        if (record.type === 0 || record.type === 2) {
+          return (
+            <Paragraph
+              ellipsis={{
+                rows: 2,
+                showTooltip: {
+                  type: 'popover',
+                  opts: {
+                    style: {
+                      maxWidth: 300,
+                      maxHeight: 400,
+                      overflowY: 'auto'
+                    }
+                  },
+                },
+              }}
+              style={{ maxWidth: 240 }}
+            >
+              {text}
+            </Paragraph>
+          );
+        }
+        return text;
+      }
+    }
+    ,
   ];
 
   const [logs, setLogs] = useState([]);

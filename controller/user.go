@@ -3,14 +3,17 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"one-api/common"
 	"one-api/model"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 )
 
 type LoginRequest struct {
@@ -104,6 +107,137 @@ func Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "",
 		"success": true,
+	})
+}
+
+var (
+	visitors = make(map[string]*rate.Limiter)
+	mu       sync.Mutex // 用于保护visitors map的互斥锁
+)
+
+// getVisitor 返回一个用户的rate limiter，如果不存在则创建一个
+func getVisitor(ip string) *rate.Limiter {
+	mu.Lock()
+	defer mu.Unlock()
+
+	limiter, exists := visitors[ip]
+	if !exists {
+		limiter = rate.NewLimiter(rate.Every(10*time.Second), 1)
+		visitors[ip] = limiter
+	}
+	return limiter
+}
+
+func Signing(c *gin.Context) {
+	limiter := getVisitor(c.ClientIP())
+	if !limiter.Allow() {
+		sendResponse(c, http.StatusOK, "点过了还点？", true)
+		return
+	}
+
+	session := sessions.Default(c)
+	username := session.Get("username")
+	id := session.Get("id")
+
+	var user model.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		sendResponse(c, http.StatusBadRequest, "Invalid request body", false)
+		return
+	}
+
+	userById, err := model.GetUserById(user.Id, false)
+	if err != nil {
+		sendResponse(c, http.StatusInternalServerError, err.Error(), false)
+		return
+	}
+
+	if sessionIDInt, ok := id.(int); !ok || user.Id != sessionIDInt {
+		sendResponse(c, http.StatusUnauthorized, "??你在干什么？", false)
+		return
+	}
+
+	if sessionUsernameStr, ok := username.(string); !ok || userById.Username != sessionUsernameStr {
+		sendResponse(c, http.StatusUnauthorized, "??你在干什么？", false)
+		return
+	}
+
+	now := time.Now().Truncate(24 * time.Hour)
+	lastSignIn := userById.LastSignIn
+
+	if lastSignIn.Year() == now.Year() && lastSignIn.YearDay() == now.YearDay() {
+		sendResponse(c, http.StatusOK, "今日已签到，请明天再来", true)
+		return
+	}
+
+	var randomIncrease int
+	var message string
+	var zero int = 0
+
+	if userById.LinuxDoLevel >= 2 {
+
+		*userById.SigningPeriod += 1
+		randomIncrease = rand.Intn(50001) + 50000
+		userById.Quota += randomIncrease
+
+		if 2 == userById.LinuxDoLevel {
+			//if *userById.SigningPeriod == 7 {
+			//	*userById.IncrementState = false
+			//	userById.SigningPeriod = &zero
+			//}
+			//message = fmt.Sprintf("今日签到赠送 %s 签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
+			message = fmt.Sprintf("2级用户暂时停止签到，已有额度不受影响.请尽快提升为3级，感谢支持！😋")
+			model.RecordLog(user.Id, model.LogTypeSystem, message)
+			sendResponse(c, http.StatusOK, message, true)
+			return
+		}
+
+		if 3 == userById.LinuxDoLevel {
+			// 在非第7天有概率增加积分然后重置签到周期
+			//if userById.LinuxDoLevel > 2 && *userById.SigningPeriod < 7 && rand.Float32() < 0.1 {
+			// 每次签到0.1概率触发增幅
+			if rand.Float32() < 0.1 {
+				randomIncrease += rand.Intn(50001) + 50000
+				userById.Quota += randomIncrease
+				*userById.IncrementState = true
+				userById.SigningPeriod = &zero
+				//message = fmt.Sprintf("真幸运啊，触发增幅咯，本次额外增幅额度为：%s !!! 重置签到周期，当前签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
+				message = fmt.Sprintf("真幸运啊，触发增幅咯，本次额外增幅额度为：%s !!!🎀🎀🎀", common.LogQuota(randomIncrease))
+			} else
+			// 如果到达第7天还未触发则增加嘲讽
+			if *userById.SigningPeriod >= 7 && !*userById.IncrementState {
+				//randomIncrease += rand.Intn(50001) + 50000
+				//userById.Quota += randomIncrease
+				//*userById.IncrementState = false
+				//userById.SigningPeriod = &zero
+				message = fmt.Sprintf("难绷😋，这是没触发增幅的第几天了？第 %d 天啦！🤣,这是今天的收获：%s", *userById.SigningPeriod, common.LogQuota(randomIncrease))
+			} else {
+				message = fmt.Sprintf("又是普普通通的一天啊😳，今日签到赠送 %s ~", common.LogQuota(randomIncrease))
+			}
+
+			//else if *userById.SigningPeriod == 7 && *userById.IncrementState {
+			//	*userById.IncrementState = false
+			//	userById.SigningPeriod = &zero
+			//	message = fmt.Sprintf("今日签到赠送 %s 签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
+			//}
+
+		}
+	}
+
+	userById.LastSignIn = now
+	err = userById.Update(false)
+	if err != nil {
+		sendResponse(c, http.StatusOK, err.Error(), false)
+		return
+	}
+
+	model.RecordLog(user.Id, model.LogTypeSystem, message)
+	sendResponse(c, http.StatusOK, message, true)
+}
+
+func sendResponse(c *gin.Context, status int, message string, success bool) {
+	c.JSON(status, gin.H{
+		"message": message,
+		"success": success,
 	})
 }
 

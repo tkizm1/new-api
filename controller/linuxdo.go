@@ -154,7 +154,9 @@ func LinuxDoOAuth(c *gin.Context) {
 			}
 			user.Role = common.RoleCommonUser
 			user.Status = common.UserStatusEnabled
-
+			user.LastSignIn = time.Now().AddDate(0, 0, -1)
+			user.LastRequestTime = time.Now().Unix()
+			user.SigningPeriod = new(int)
 			if err := user.Insert(user.InviterId); err != nil {
 				c.JSON(http.StatusOK, gin.H{
 					"success": false,
@@ -199,8 +201,11 @@ func LinuxDoBind(c *gin.Context) {
 		return
 	}
 	user := model.User{
-		LinuxDoId:    strconv.Itoa(linuxdoUser.ID),
-		LinuxDoLevel: linuxdoUser.TrustLevel,
+		LinuxDoId:       strconv.Itoa(linuxdoUser.ID),
+		LinuxDoLevel:    linuxdoUser.TrustLevel,
+		LastSignIn:      time.Now().AddDate(0, 0, -1),
+		LastRequestTime: time.Now().Unix(),
+		SigningPeriod:   new(int),
 	}
 	if model.IsLinuxDoIdAlreadyTaken(user.LinuxDoId) {
 		c.JSON(http.StatusOK, gin.H{

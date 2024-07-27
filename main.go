@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"one-api/common"
 	"one-api/constant"
 	"one-api/controller"
@@ -18,8 +19,6 @@ import (
 	"one-api/service"
 	"os"
 	"strconv"
-
-	_ "net/http/pprof"
 )
 
 //go:embed web/dist
@@ -31,6 +30,9 @@ var indexPage []byte
 func main() {
 	common.SetupLogger()
 	common.SysLog("New API " + common.Version + " started")
+
+	//go controller.StartTicker()
+
 	if os.Getenv("GIN_MODE") != "debug" {
 		gin.SetMode(gin.ReleaseMode)
 	}

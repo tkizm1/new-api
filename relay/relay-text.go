@@ -170,6 +170,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 	requestBody = bytes.NewBuffer(jsonData)
 
 	statusCodeMappingStr := c.GetString("status_code_mapping")
+
 	resp, err := adaptor.DoRequest(c, relayInfo, requestBody)
 	if err != nil {
 		return service.OpenAIErrorWrapper(err, "do_request_failed", http.StatusInternalServerError)
@@ -193,6 +194,7 @@ func TextHelper(c *gin.Context) *dto.OpenAIErrorWithStatusCode {
 		service.ResetStatusCode(openaiErr, statusCodeMappingStr)
 		return openaiErr
 	}
+
 	postConsumeQuota(c, relayInfo, textRequest.Model, usage, ratio, preConsumedQuota, userQuota, modelRatio, groupRatio, modelPrice, getModelPriceSuccess, "")
 	return nil
 }
@@ -360,10 +362,46 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, modelN
 		logContent += ", " + extraContent
 	}
 	other := service.GenerateTextOtherInfo(ctx, relayInfo, modelRatio, groupRatio, completionRatio, modelPrice)
-	model.RecordConsumeLog(ctx, relayInfo.UserId, relayInfo.ChannelId, promptTokens, completionTokens, logModel,
-		tokenName, quota, logContent, relayInfo.TokenId, userQuota, int(useTimeSeconds), relayInfo.IsStream, other)
+	content, _ := buildQuestion(ctx)
 
-	//if quota != 0 {
-	//
-	//}
+	//fmt.Println(content)
+	model.RecordConsumeLog(ctx, relayInfo.UserId, relayInfo.ChannelId, promptTokens, completionTokens, logModel,
+		tokenName, quota, logContent, relayInfo.TokenId, userQuota, int(useTimeSeconds), relayInfo.IsStream, other, content)
+}
+
+func buildQuestion(c *gin.Context) (string, error) {
+	// 读取并解析请求体中的 JSON 数据
+	var jsonData map[string]interface{}
+	if err := c.ShouldBindJSON(&jsonData); err != nil {
+		return "", errors.New("failed to unmarshal JSON")
+	}
+
+	// 获取 messages 集合数据
+	data, exists := jsonData["messages"]
+	if !exists {
+		return "", errors.New("messages key not found in JSON")
+	}
+
+	// 将 data 类型断言为 []interface{}
+	dataArray, ok := data.([]interface{})
+	if !ok || len(dataArray) == 0 {
+		return "", errors.New("messages key is not a valid non-empty array")
+	}
+
+	// 找到集合中索引最大的元素，并断言为 map[string]interface{}
+	maxValue, ok := dataArray[len(dataArray)-1].(map[string]interface{})
+	if !ok {
+		return "", errors.New("max value is not a valid map")
+	}
+
+	// 检查 role 是否为 "user" 并提取 content 字段
+	if role, roleExists := maxValue["role"].(string); !roleExists || role != "user" {
+		return "", nil
+	}
+
+	if content, contentExists := maxValue["content"].(string); contentExists {
+		return content, nil
+	} else {
+		return "", errors.New("content not found in max element")
+	}
 }

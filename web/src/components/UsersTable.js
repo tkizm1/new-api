@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { API, showError, showSuccess } from '../helpers';
+import { API, showError, showSuccess, timestamp2string } from '../helpers';
 import {
   Button,
   Form,
@@ -136,6 +136,13 @@ const UsersTable = () => {
             )}
           </div>
         );
+      },
+    },
+    {
+      title: '最后一次调用时间',
+      dataIndex: 'last_request_time',
+      render: (text) => {
+        return <div>{renderTimestamp(text)}</div>;
       },
     },
     {
@@ -432,6 +439,10 @@ const UsersTable = () => {
       showError(error.message);
     }
   };
+
+  function renderTimestamp(timestamp) {
+    return <>{timestamp2string(timestamp)}</>;
+  }
 
   return (
     <>
