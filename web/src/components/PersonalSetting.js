@@ -6,7 +6,7 @@ import {
   isRoot,
   showError,
   showInfo,
-  showSuccess,
+  showSuccess, timestamp2string
 } from '../helpers';
 import Turnstile from 'react-turnstile';
 import { UserContext } from '../context/User';
@@ -373,6 +373,9 @@ const PersonalSetting = () => {
                   </Descriptions.Item>
                   <Descriptions.Item itemKey='请求次数'>
                     {userState.user?.request_count}
+                  </Descriptions.Item>
+                  <Descriptions.Item itemKey='最后请求时间'>
+                    {renderTimestamp(userState.user?.last_request_time)}
                   </Descriptions.Item>
                 </Descriptions>
               }
@@ -784,5 +787,7 @@ const PersonalSetting = () => {
     </div>
   );
 };
-
+function renderTimestamp(timestamp) {
+  return <>{timestamp2string(timestamp)}</>;
+}
 export default PersonalSetting;

@@ -129,6 +129,8 @@ var RelayTimeout = GetEnvOrDefault("RELAY_TIMEOUT", 0) // unit is second
 
 var GeminiSafetySetting = GetEnvOrDefaultString("GEMINI_SAFETY_SETTING", "BLOCK_NONE")
 
+var BalanceRecoveryEnabled = false
+
 const (
 	RequestIdKey = "X-Oneapi-Request-Id"
 )

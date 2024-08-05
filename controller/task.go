@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"github.com/samber/lo"
 	"io"
+	"log"
 	"net/http"
 	"one-api/common"
 	"one-api/constant"
@@ -283,32 +285,76 @@ func GetUserTask(c *gin.Context) {
 	})
 }
 
-//func RecoveryQuota() {
-//
-//	users, err := model.GetAllUsersByRecoveryQuota()
-//	if err != nil {
-//		common.FatalLog("获取用户列表失败: " + err.Error())
-//	}
-//	for _, user := range users {
-//		// 处理用户数据
-//		user.Quota = user.Quota - 5000
-//		err := user.Update(false)
-//		if err != nil {
-//			common.FatalLog("回收用户额度失败: " + err.Error())
-//		}
-//		message := fmt.Sprintf("因你的最后请求时间(%d)距今(%s)为止超过6天，额度过期，现在回收你的额度 %s ~", user.LastRequestTime, new)
-//		model.RecordLog(user.Id, model.LogTypeSystem, message)
-//	}
-//}
-//
-//func StartTicker() {
-//	ticker := time.NewTicker(3 * time.Second)
-//	defer ticker.Stop()
-//
-//	for {
-//		select {
-//		case <-ticker.C:
-//			RecoveryQuota()
-//		}
-//	}
-//}
+func RecoveryQuota() {
+
+	err := common.InitRedisClient()
+	if err != nil {
+		common.FatalLog("failed to initialize Redis: " + err.Error())
+	}
+
+	// Initialize options
+	model.InitOptionMap()
+	// 在执行任务前检查 BalanceRecoveryEnabled 的值
+	if !common.BalanceRecoveryEnabled {
+		common.SysLog("定时任务被禁用，跳过执行")
+		return
+	} else {
+		common.SysLog("定时任务被已启用，即将执行执行")
+	}
+
+	now := common.GetTimeStringByFormat()
+	users, err := model.GetAllUsersByRecoveryQuota()
+	if err != nil {
+		common.FatalLog("获取用户列表失败: " + err.Error())
+	}
+	for _, user := range users {
+		oldQuota := user.Quota
+		user.Quota = 0
+
+		err := user.Update(false)
+		if err != nil {
+			common.FatalLog("回收用户额度失败: " + err.Error())
+		}
+
+		message := fmt.Sprintf(
+			"因你的最后请求时间(%s)距今(%s)为止超过6天，额度过期，现在回收你的额度 %s ~",
+			common.TimeToString(user.LastRequestTime),
+			now,
+			common.LogQuota(oldQuota),
+		)
+
+		model.RecordLog(user.Id, model.LogTypeSystem, message)
+	}
+	common.SysLog("定时任务执行完毕！")
+}
+
+func StartTicker() {
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			RecoveryQuota()
+		}
+	}
+}
+
+func StartCron() {
+	// 创建一个新的 Cron 实例
+	c := cron.New(cron.WithSeconds())
+
+	// 添加一个定时任务，每天晚上23:56分执行 RecoveryQuota
+	_, err := c.AddFunc("0 56 23 * * *", RecoveryQuota)
+	//_, err := c.AddFunc("*/3 * * * * *", RecoveryQuota)
+	if err != nil {
+		log.Fatalf("添加定时任务失败: %v", err)
+	}
+
+	// 启动 Cron 调度器
+	c.Start()
+
+	// 确保主程序不会退出
+	select {}
+}

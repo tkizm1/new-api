@@ -88,7 +88,6 @@ func GetAllUsersByRecoveryQuota() (users []*User, err error) {
 	now := time.Now().Unix()
 	// 计算6天前的时间戳
 	sixDaysAgo := now - 6*24*60*60
-	print(sixDaysAgo)
 
 	err = DB.Unscoped().
 		Order("id desc").

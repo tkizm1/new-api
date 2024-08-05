@@ -15,6 +15,7 @@
 1. 额度签到(前端暂不可配，此功能仅支持Linux.do论坛账户登陆方式使用)
 2. 消息穿透
 3. qa记录(仅记录文字)
+4. 额度有效期
 
 ## 部署
 ### 部署要求
@@ -25,6 +26,10 @@
 ![img.png](img.png)
 ![img_2.png](img_2.png)
 ![img_3.png](img_3.png)
+![img_4.png](img_4.png)
+![img_5.png](img_5.png)
+![img_6.png](img_6.png)
+![img_7.png](img_7.png)
 ## 技术支持
 
 - [Linux.do](https://github.com/linux-do)

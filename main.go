@@ -31,8 +31,6 @@ func main() {
 	common.SetupLogger()
 	common.SysLog("New API " + common.Version + " started")
 
-	//go controller.StartTicker()
-
 	if os.Getenv("GIN_MODE") != "debug" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -59,6 +57,10 @@ func main() {
 
 	// Initialize options
 	model.InitOptionMap()
+	//if common.BalanceRecoveryEnabled {
+	go controller.StartCron()
+	//}
+
 	if common.RedisEnabled {
 		// for compatibility with old versions
 		common.MemoryCacheEnabled = true

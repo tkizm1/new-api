@@ -63,7 +63,7 @@ const HeaderBar = () => {
     let userString = localStorage.getItem('user');
     if (userString) {
       let user = JSON.parse(userString);
-      let userId = { id: user.id };
+      let userId = { id: user.id }; 
       const res = await API.post('/api/user/signing', userId);
       const { success, message, data } = res.data;
       if (success) {
@@ -75,7 +75,7 @@ const HeaderBar = () => {
       showError("用户未找到");
     }
   }
-
+  
 
   const handleNewYearClick = () => {
     fireworks.init('root', {});

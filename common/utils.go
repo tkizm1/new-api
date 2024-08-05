@@ -175,6 +175,15 @@ func GetTimeString() string {
 	now := time.Now()
 	return fmt.Sprintf("%s%d", now.Format("20060102150405"), now.UnixNano()%1e9)
 }
+func GetTimeStringByFormat() string {
+	now := time.Now()
+	return fmt.Sprintf("%s%d", now.Format("2006-01-02 15:04:05"), now.UnixNano()%1e9)
+}
+
+func TimeToString(timestamp int64) string {
+	t := time.Unix(timestamp, 0)
+	return fmt.Sprintf("%s%d", t.Format("2006-01-02 15:04:05"), t.UnixNano()%1e9)
+}
 
 func Max(a int, b int) int {
 	if a >= b {

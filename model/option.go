@@ -110,7 +110,7 @@ func InitOptionMap() {
 	common.OptionMap["StopOnSensitiveEnabled"] = strconv.FormatBool(constant.StopOnSensitiveEnabled)
 	common.OptionMap["SensitiveWords"] = constant.SensitiveWordsToString()
 	common.OptionMap["StreamCacheQueueLength"] = strconv.Itoa(constant.StreamCacheQueueLength)
-
+	common.OptionMap["BalanceRecoveryEnabled"] = strconv.FormatBool(common.BalanceRecoveryEnabled)
 	common.OptionMapRWMutex.Unlock()
 	loadOptionsFromDatabase()
 }
@@ -231,6 +231,8 @@ func updateOptionMap(key string, value string) (err error) {
 			constant.StopOnSensitiveEnabled = boolValue
 		case "SMTPSSLEnabled":
 			common.SMTPSSLEnabled = boolValue
+		case "BalanceRecoveryEnabled":
+			common.BalanceRecoveryEnabled = boolValue
 		}
 	}
 	switch key {

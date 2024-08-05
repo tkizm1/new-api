@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Button, Col, Form, Row, Spin } from '@douyinfe/semi-ui';
+import { Banner, Button, Col, Form, Row, Spin } from '@douyinfe/semi-ui';
 import {
   compareObjects,
   API,
@@ -15,10 +15,10 @@ export default function SettingsCreditLimit(props) {
     PreConsumedQuota: '',
     QuotaForInviter: '',
     QuotaForInvitee: '',
+    BalanceRecoveryEnabled: false,
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
-
   function onSubmit() {
     const updateArray = compareObjects(inputs, inputsRow);
     if (!updateArray.length) return showWarning('你似乎并没有修改什么');
@@ -141,8 +141,26 @@ export default function SettingsCreditLimit(props) {
                   }
                 />
               </Col>
+              <Col span={16}>
+                <Form.Switch
+                  field={'BalanceRecoveryEnabled'}
+                  label={'额度巡检'}
+                  extraText={'每天晚上开始回收最后一次请求距离当前时间间隔大于6天的用户额度。'}
+                  size='large'
+                  checkedText='｜'
+                  uncheckedText='〇'
+                  onChange={(value) => {
+                    setInputs({
+                      ...inputs,
+                      BalanceRecoveryEnabled: value,
+                    });
+                  }}
+                />
+              </Col>
             </Row>
-
+            {/*<Row gutter={16}>*/}
+            {/*  */}
+            {/*</Row>*/}
             <Row>
               <Button size='large' onClick={onSubmit}>
                 保存额度设置
