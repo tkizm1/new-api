@@ -1,3 +1,4 @@
+# 目前有计费bug，礼拜六修
 # New API
 ### Linux.do公益版
 > [!NOTE]
