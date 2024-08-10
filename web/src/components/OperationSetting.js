@@ -38,6 +38,7 @@ const OperationSetting = () => {
     CheckSensitiveOnCompletionEnabled: '',
     StopOnSensitiveEnabled: '',
     SensitiveWords: '',
+    MjNotifyEnabled: false,
     MjAccountFilterEnabled: false,
     MjModeClearEnabled: false,
     MjForwardUrlEnabled: false,
@@ -49,6 +50,9 @@ const OperationSetting = () => {
     DefaultCollapseSidebar: false, // 默认折叠侧边栏
     RetryTimes: 0,
     BalanceRecoveryEnabled: false,
+    CensorshipProxyAddress: '',
+    Censorship: '',
+    MoralCensorshipEnabled: false,
   });
 
   let [loading, setLoading] = useState(false);

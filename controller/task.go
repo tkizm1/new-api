@@ -309,9 +309,8 @@ func RecoveryQuota() {
 	}
 	for _, user := range users {
 		oldQuota := user.Quota
-		user.Quota = 0
 
-		err := user.Update(false)
+		err := user.UpdateUserQuota(0)
 		if err != nil {
 			common.FatalLog("回收用户额度失败: " + err.Error())
 		}

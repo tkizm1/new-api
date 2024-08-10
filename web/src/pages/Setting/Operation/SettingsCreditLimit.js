@@ -19,6 +19,7 @@ export default function SettingsCreditLimit(props) {
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
+
   function onSubmit() {
     const updateArray = compareObjects(inputs, inputsRow);
     if (!updateArray.length) return showWarning('你似乎并没有修改什么');
@@ -158,9 +159,7 @@ export default function SettingsCreditLimit(props) {
                 />
               </Col>
             </Row>
-            {/*<Row gutter={16}>*/}
-            {/*  */}
-            {/*</Row>*/}
+
             <Row>
               <Button size='large' onClick={onSubmit}>
                 保存额度设置

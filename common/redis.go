@@ -2,8 +2,10 @@ package common
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-redis/redis/v8"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -49,6 +51,23 @@ func ParseRedisOption() *redis.Options {
 func RedisSet(key string, value string, expiration time.Duration) error {
 	ctx := context.Background()
 	return RDB.Set(ctx, key, value, expiration).Err()
+}
+
+func RedisSetLastRequestTime(key string, value interface{}, expiration time.Duration) error {
+	ctx := context.Background()
+	var stringValue string
+	switch v := value.(type) {
+	case int:
+		stringValue = strconv.Itoa(v)
+	case int64:
+		stringValue = strconv.FormatInt(v, 10)
+	case string:
+		stringValue = v
+	default:
+		return fmt.Errorf("unsupported value type")
+	}
+	// 假设使用 Redis 客户端库进行设置
+	return RDB.Set(ctx, key, stringValue, expiration).Err()
 }
 
 func RedisGet(key string) (string, error) {

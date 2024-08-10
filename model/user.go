@@ -92,7 +92,7 @@ func GetAllUsersByRecoveryQuota() (users []*User, err error) {
 	err = DB.Unscoped().
 		Order("id desc").
 		Omit("password").
-		Where("last_request_time IS NOT NULL AND last_request_time < ?", sixDaysAgo).
+		Where("last_request_time IS NOT NULL AND last_request_time < ? AND quota > ? AND `group` in (?,?)", sixDaysAgo, 0, "default", "vip").
 		Find(&users).Error
 
 	return users, err
@@ -274,6 +274,29 @@ func (user *User) Update(updatePassword bool) error {
 	newUser := *user
 	DB.First(&user, user.Id)
 	err = DB.Model(user).Updates(newUser).Error
+	if err == nil {
+		if common.RedisEnabled {
+			_ = common.RedisSet(fmt.Sprintf("user_group:%d", user.Id), user.Group, time.Duration(UserId2GroupCacheSeconds)*time.Second)
+			_ = common.RedisSet(fmt.Sprintf("user_quota:%d", user.Id), strconv.Itoa(user.Quota), time.Duration(UserId2QuotaCacheSeconds)*time.Second)
+		}
+	}
+	return err
+}
+
+func (user *User) UpdateUserLastRequestTime(lastRequestTime int64) error {
+	err := DB.Model(user).Update("LastRequestTime", lastRequestTime).Error
+	if err == nil {
+		if common.RedisEnabled {
+			_ = common.RedisSet(fmt.Sprintf("user_group:%d", user.Id), user.Group, time.Duration(UserId2GroupCacheSeconds)*time.Second)
+			_ = common.RedisSet(fmt.Sprintf("user_quota:%d", user.Id), strconv.Itoa(user.Quota), time.Duration(UserId2QuotaCacheSeconds)*time.Second)
+			_ = common.RedisSetLastRequestTime(fmt.Sprintf("last_request_time:%d", user.Id), user.LastRequestTime, time.Duration(UserId2QuotaCacheSeconds)*time.Second)
+		}
+	}
+	return err
+}
+
+func (user *User) UpdateUserQuota(quota int) error {
+	err := DB.Model(user).Update("quota", quota).Error
 	if err == nil {
 		if common.RedisEnabled {
 			_ = common.RedisSet(fmt.Sprintf("user_group:%d", user.Id), user.Group, time.Duration(UserId2GroupCacheSeconds)*time.Second)

@@ -1,4 +1,3 @@
-# 目前有计费bug，礼拜六修
 # New API
 ### Linux.do公益版
 > [!NOTE]
@@ -17,6 +16,13 @@
 2. 消息穿透
 3. qa记录(仅记录文字)
 4. 额度有效期
+5. 道德审查(前端配置接口已实现，审查接口暂未实现)
+
+## 更新记录
+20240810:
+    修复模型计费bug
+    修复额度巡检回收bug
+    签到功能允许vip分组用户
 
 ## 部署
 ### 部署要求
@@ -31,6 +37,7 @@
 ![img_5.png](img_5.png)
 ![img_6.png](img_6.png)
 ![img_7.png](img_7.png)
+![img_8.png](img_8.png)
 ## 技术支持
 
 - [Linux.do](https://github.com/linux-do)

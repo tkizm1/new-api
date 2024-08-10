@@ -131,6 +131,12 @@ var GeminiSafetySetting = GetEnvOrDefaultString("GEMINI_SAFETY_SETTING", "BLOCK_
 
 var BalanceRecoveryEnabled = false
 
+var CensorshipProxyAddress = ""
+
+var Censorship = ""
+
+var MoralCensorshipEnabled = false
+
 const (
 	RequestIdKey = "X-Oneapi-Request-Id"
 )

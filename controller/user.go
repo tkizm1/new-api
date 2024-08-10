@@ -191,7 +191,7 @@ func Signing(c *gin.Context) {
 			return
 		}
 
-		if 3 == userById.LinuxDoLevel {
+		if 3 == userById.LinuxDoLevel || "vip" == userById.Group {
 			// 在非第7天有概率增加积分然后重置签到周期
 			//if userById.LinuxDoLevel > 2 && *userById.SigningPeriod < 7 && rand.Float32() < 0.1 {
 			// 每次签到0.1概率触发增幅
@@ -940,11 +940,11 @@ type topUpRequest struct {
 	Key string `json:"key"`
 }
 
-var lock = sync.Mutex{}
+var topUpLock = sync.Mutex{}
 
 func TopUp(c *gin.Context) {
-	lock.Lock()
-	defer lock.Unlock()
+	topUpLock.Lock()
+	defer topUpLock.Unlock()
 	req := topUpRequest{}
 	err := c.ShouldBindJSON(&req)
 	if err != nil {

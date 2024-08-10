@@ -111,6 +111,9 @@ func InitOptionMap() {
 	common.OptionMap["SensitiveWords"] = constant.SensitiveWordsToString()
 	common.OptionMap["StreamCacheQueueLength"] = strconv.Itoa(constant.StreamCacheQueueLength)
 	common.OptionMap["BalanceRecoveryEnabled"] = strconv.FormatBool(common.BalanceRecoveryEnabled)
+	common.OptionMap["CensorshipProxyAddress"] = common.CensorshipProxyAddress
+	common.OptionMap["Censorship"] = common.Censorship
+	common.OptionMap["MoralCensorshipEnabled"] = strconv.FormatBool(common.MoralCensorshipEnabled)
 	common.OptionMapRWMutex.Unlock()
 	loadOptionsFromDatabase()
 }
@@ -233,6 +236,9 @@ func updateOptionMap(key string, value string) (err error) {
 			common.SMTPSSLEnabled = boolValue
 		case "BalanceRecoveryEnabled":
 			common.BalanceRecoveryEnabled = boolValue
+		case "MoralCensorshipEnabled":
+			common.MoralCensorshipEnabled = boolValue
+
 		}
 	}
 	switch key {
@@ -335,6 +341,10 @@ func updateOptionMap(key string, value string) (err error) {
 		constant.SensitiveWordsFromString(value)
 	case "StreamCacheQueueLength":
 		constant.StreamCacheQueueLength, _ = strconv.Atoi(value)
+	case "CensorshipProxyAddress":
+		common.CensorshipProxyAddress = value
+	case "Censorship":
+		common.Censorship = value
 	}
 	return err
 }

@@ -14,6 +14,9 @@ export default function SettingsSensitiveWords(props) {
     CheckSensitiveEnabled: false,
     CheckSensitiveOnPromptEnabled: false,
     SensitiveWords: '',
+    CensorshipProxyAddress: '',
+    Censorship: '',
+    MoralCensorshipEnabled: false,
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
@@ -63,6 +66,7 @@ export default function SettingsSensitiveWords(props) {
     setInputsRow(structuredClone(currentInputs));
     refForm.current.setValues(currentInputs);
   }, [props.options]);
+
   return (
     <>
       <Spin spinning={loading}>
@@ -71,7 +75,56 @@ export default function SettingsSensitiveWords(props) {
           getFormApi={(formAPI) => (refForm.current = formAPI)}
           style={{ marginBottom: 15 }}
         >
-          <Form.Section text={'屏蔽词过滤设置'}>
+          <Form.Section text={'屏蔽词过滤以及道德审查设置'}>
+            <Row gutter={24}>
+              <Col span={8}>
+                <Form.Input
+                  field={'CensorshipProxyAddress'}
+                  label={'代理地址'}
+                  initValue={''}
+                  placeholder={'列如：https://openai'}
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      CensorshipProxyAddress: value,
+                    })
+                  }
+                  showClear
+                />
+              </Col>
+              <Col span={8}>
+                <Form.Input
+                  field={'Censorship'}
+                  label={'Key'}
+                  initValue={''}
+                  // type='password'
+                  // autoComplete='new-password'
+                  placeholder={'输入令牌'}
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      Censorship: value,
+                    })
+                  }
+                  showClear
+                />
+              </Col>
+              <Col span={8}>
+                <Form.Switch
+                  field={'MoralCensorshipEnabled'}
+                  label={'道德审查'}
+                  size='large'
+                  checkedText='｜'
+                  uncheckedText='〇'
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      MoralCensorshipEnabled: value,
+                    })
+                  }
+                />
+              </Col>
+            </Row>
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Switch
@@ -124,7 +177,7 @@ export default function SettingsSensitiveWords(props) {
             </Row>
             <Row>
               <Button size='large' onClick={onSubmit}>
-                保存屏蔽词过滤设置
+                保存屏蔽词过滤以及道德审查设置
               </Button>
             </Row>
           </Form.Section>
