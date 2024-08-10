@@ -20,15 +20,49 @@
 
 ## 更新记录
 20240810:
-    修复模型计费bug
-    修复额度巡检回收bug
-    签到功能允许vip分组用户
+    
+1. 修复模型计费bug
+2. 修复额度巡检回收bug
+3. 签到功能允许vip分组用户
 
 ## 部署
 ### 部署要求
 - 本地数据库（默认）：SQLite（Docker 部署默认使用 SQLite，必须挂载 `/data` 目录到宿主机）
 - 远程数据库：MySQL 版本 >= 5.7.8，PgSQL 版本 >= 9.6
 
+### 使用指南
+1. 上传源码到服务器目录(这里举例为/home/kites_api/new-api,请部署时更换为自己的路径)
+2. 修改docker-compose.yml文件内容如下
+```yml
+version: '3.4'
+
+services:
+  new-api:
+    build: /home/kites_api/new-api
+    container_name: kites-api
+    restart: always
+    command: --log-dir /app/logs
+    ports:
+      - "3999:3000"
+    volumes:
+      - ./data/new-api:/data
+      - ./logs:/app/logs
+    environment:
+      - SQL_DSN=数据库用户:数据库密码@tcp(ip:端口)/linux-api
+      - REDIS_CONN_STRING=redis://:redis密码@ip:端口
+      - SESSION_SECRET=linux_do  # 修改为随机字符串
+      - TZ=Asia/Shanghai
+      #      - NODE_TYPE=slave  # 多机部署时从节点取消注释该行
+      - SYNC_FREQUENCY=60  # 需要定期从数据库加载数据时取消注释该行
+#      - FRONTEND_BASE_URL=https://openai.justsong.cn  # 多机部署时从节点取消注释该行
+```
+3. 执行以下命令即可
+
+```sheel
+cd /home/kites_api/new-api/
+docker-compose build new-api
+docker-compose up -d
+```
 ## 功能截图
 ![img.png](img.png)
 ![img_2.png](img_2.png)
