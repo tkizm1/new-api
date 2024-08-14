@@ -11,6 +11,7 @@ import {
 import Turnstile from 'react-turnstile';
 import { UserContext } from '../context/User';
 import { onGitHubOAuthClicked, onLinuxDoOAuthClicked } from './utils';
+import ReactMarkdown from 'react-markdown';
 import {
   Avatar,
   Banner,
@@ -61,7 +62,20 @@ const PersonalSetting = () => {
   const [systemToken, setSystemToken] = useState('');
   const [models, setModels] = useState([]);
   const [openTransfer, setOpenTransfer] = useState(false);
+  const [showUserAgreementModal, setShowUserAgreementModal] = useState(false);
   const [transferAmount, setTransferAmount] = useState(0);
+  const userAgreementContent = `
+# 用户协议
+
+这是用户协议的内容。你可以在这里详细描述用户协议的条款和条件。
+
+## 条款一
+详细描述条款一的内容。
+
+## 条款二
+详细描述条款二的内容。
+`;
+
 
   useEffect(() => {
     // let user = localStorage.getItem('user');
@@ -230,6 +244,20 @@ const PersonalSetting = () => {
     }
   };
 
+  const updateUserAgreementStatus = async () => {
+    const res = await API.put(`/api/user/self`, {
+      password: inputs.set_new_password,
+    });
+    const { success, message } = res.data;
+    if (success) {
+      showSuccess('密码修改成功！');
+      setShowWeChatBindModal(false);
+    } else {
+      showError(message);
+    }
+    setShowChangePasswordModal(false);
+  };
+
   const sendVerificationCode = async () => {
     if (inputs.email === '') {
       showError('请输入邮箱！');
@@ -331,6 +359,25 @@ const PersonalSetting = () => {
               </div>
             </div>
           </Modal>
+
+          <Modal
+            title='用户(使用)协议'
+            visible={showUserAgreementModal}
+            onOk={updateUserAgreementStatus}
+            onCancel={() => setShowUserAgreementModal(false)}
+            maskClosable={false}
+            centered={true}
+            style={{ width: '80%', height: '80%' }} // 设置弹窗宽度和高度为屏幕的百分比
+            bodyStyle={{ overflowY: 'auto', height: 'calc(100% - 55px)' }} // 确保内容区域可滚动
+          >
+            <div style={{ marginTop: 20 }}>
+              <ReactMarkdown>
+                {userAgreementContent}
+              </ReactMarkdown>
+            </div>
+          </Modal>
+
+
           <div style={{ marginTop: 20 }}>
             <Card
               title={
@@ -376,6 +423,20 @@ const PersonalSetting = () => {
                   </Descriptions.Item>
                   <Descriptions.Item itemKey='最后请求时间'>
                     {renderTimestamp(userState.user?.last_request_time)}
+                  </Descriptions.Item>
+                  <Descriptions.Item itemKey="用户协议">
+                    <span style={{ color: 'rgba(var(--semi-red-5), 1)' }}>
+                      {userState.user?.request_count == 38 ? '已同意' : '未同意'}
+                    </span>
+                    <Button
+                      type={'secondary'}
+                      onClick={() => setShowUserAgreementModal(true)}
+                      size={'small'}
+                      style={{ marginLeft: 10 }}
+                    >
+                      查看
+                    </Button>
+
                   </Descriptions.Item>
                 </Descriptions>
               }

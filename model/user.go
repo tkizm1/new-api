@@ -45,6 +45,7 @@ type User struct {
 	LastRequestTime    int64          `json:"last_request_time" gorm:"bigint"`      // 最后请求时间
 	IncrementState     *bool          `json:"increment_state" gorm:"default:false"` // 增幅状态
 	MessagePenetration string         `json:"message_penetration"`                  // 消息穿透
+	UserAgreement      bool           `json:"user_agreement"`                       // 是否已同意用户协议
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 }
 

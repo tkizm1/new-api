@@ -17,6 +17,7 @@ import (
 	relayconstant "one-api/relay/constant"
 	"one-api/service"
 	"strings"
+	"time"
 )
 
 func relayHandler(c *gin.Context, relayMode int) *dto.OpenAIErrorWithStatusCode {
@@ -51,6 +52,7 @@ func Relay(c *gin.Context) {
 		c.String(http.StatusOK, userById.MessagePenetration)
 		return
 	}
+	userById.LastRequestTime = time.Now().Unix()
 
 	relayMode := constant.Path2RelayMode(c.Request.URL.Path)
 	//relayMode := constant.Path2RelayMode("/v1/moderations")
@@ -70,6 +72,15 @@ func Relay(c *gin.Context) {
 		openaiErr = relayRequest(c, relayMode, channel)
 
 		if openaiErr == nil {
+			// 有效请求更新LastRequestTime数值
+			err = userById.UpdateUserLastRequestTime(userById.LastRequestTime)
+			if err != nil {
+				c.JSON(http.StatusOK, gin.H{
+					"success": false,
+					"message": err.Error(),
+				})
+				return
+			}
 			return // 成功处理请求，直接返回
 		}
 
@@ -93,16 +104,6 @@ func Relay(c *gin.Context) {
 		c.JSON(openaiErr.StatusCode, gin.H{
 			"error": openaiErr.Error,
 		})
-	}
-
-	// 有效请求更新LastRequestTime数值
-	err = userById.UpdateUserLastRequestTime(userById.LastRequestTime)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
-		return
 	}
 }
 

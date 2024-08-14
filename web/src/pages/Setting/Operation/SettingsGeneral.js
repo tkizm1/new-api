@@ -179,6 +179,39 @@ export default function GeneralSettings(props) {
                 />
               </Col>
             </Row>
+            <Row gutter={16}>
+              <Col span={16}>
+                <Form.TextArea
+                  label={'协议内容'}
+                  extraText={''}
+                  placeholder={''}
+                  field={'AgreementContent'}
+                  onChange={(value) =>
+                    setInputs({
+                      ...inputs,
+                      AgreementContent: value,
+                    })
+                  }
+                  style={{ fontFamily: 'JetBrains Mono, Consolas' }}
+                  autosize={{ minRows: 6, maxRows: 12 }}
+                />
+              </Col>
+              <Col span={8}>
+                <Form.Switch
+                  field={'UserAgreementEnabled'}
+                  label={'用户协议'}
+                  size='large'
+                  checkedText='｜'
+                  uncheckedText='〇'
+                  onChange={(value) => {
+                    setInputs({
+                      ...inputs,
+                      UserAgreementEnabled: value,
+                    });
+                  }}
+                />
+              </Col>
+            </Row>
             <Row>
               <Button size='large' onClick={onSubmit}>
                 保存通用设置

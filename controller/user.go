@@ -179,18 +179,6 @@ func Signing(c *gin.Context) {
 		randomIncrease = rand.Intn(50001) + 50000
 		userById.Quota += randomIncrease
 
-		if 2 == userById.LinuxDoLevel {
-			//if *userById.SigningPeriod == 7 {
-			//	*userById.IncrementState = false
-			//	userById.SigningPeriod = &zero
-			//}
-			//message = fmt.Sprintf("今日签到赠送 %s 签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
-			message = fmt.Sprintf("2级用户暂时停止签到，已有额度不受影响.请尽快提升为3级，感谢支持！😋")
-			model.RecordLog(user.Id, model.LogTypeSystem, message)
-			sendResponse(c, http.StatusOK, message, true)
-			return
-		}
-
 		if 3 == userById.LinuxDoLevel || "vip" == userById.Group {
 			// 在非第7天有概率增加积分然后重置签到周期
 			//if userById.LinuxDoLevel > 2 && *userById.SigningPeriod < 7 && rand.Float32() < 0.1 {
@@ -220,6 +208,18 @@ func Signing(c *gin.Context) {
 			//	message = fmt.Sprintf("今日签到赠送 %s 签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
 			//}
 
+		}
+
+		if 2 == userById.LinuxDoLevel {
+			//if *userById.SigningPeriod == 7 {
+			//	*userById.IncrementState = false
+			//	userById.SigningPeriod = &zero
+			//}
+			//message = fmt.Sprintf("今日签到赠送 %s 签到进度 %d/7", common.LogQuota(randomIncrease), *userById.SigningPeriod)
+			message = fmt.Sprintf("2级用户暂时停止签到，已有额度不受影响.请尽快提升为3级，感谢支持！😋")
+			model.RecordLog(user.Id, model.LogTypeSystem, message)
+			sendResponse(c, http.StatusOK, message, true)
+			return
 		}
 	}
 
