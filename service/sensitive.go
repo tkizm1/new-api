@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
-	messages := request.Messages
+func CheckSensitiveMessages(messages []dto.Message) error {
 	for _, message := range messages {
 		if len(message.Content) > 0 {
 			if message.IsStringContent() {
@@ -17,23 +16,11 @@ func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
 				if ok, words := SensitiveWordContains(stringContent); ok {
 					return errors.New("sensitive words: " + strings.Join(words, ","))
 				}
-			} else {
-				if strings.HasPrefix(request.Model, "claude") {
-					arrayContent := message.ParseContent()
-					for _, m := range arrayContent {
-						if m.Type == "image_url" {
-							return errors.New("禁止claude模型发送图片")
-						}
-					}
-				}
 			}
 		} else {
 			arrayContent := message.ParseContent()
 			for _, m := range arrayContent {
 				if m.Type == "image_url" {
-					if strings.HasPrefix(request.Model, "claude") {
-						return errors.New("禁止claude模型发送图片")
-					}
 					// TODO: check image url
 				} else {
 					if ok, words := SensitiveWordContains(m.Text); ok {
@@ -45,7 +32,6 @@ func CheckSensitiveMessages(request *dto.GeneralOpenAIRequest) error {
 	}
 	return nil
 }
-
 func CheckSensitiveText(text string) error {
 	if ok, words := SensitiveWordContains(text); ok {
 		return errors.New("sensitive words: " + strings.Join(words, ","))
