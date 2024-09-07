@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -13,6 +14,7 @@ import (
 	"one-api/middleware"
 	"one-api/model"
 	"one-api/relay"
+	relaycommon "one-api/relay/common"
 	"one-api/relay/constant"
 	relayconstant "one-api/relay/constant"
 	"one-api/service"
@@ -39,11 +41,102 @@ func relayHandler(c *gin.Context, relayMode int) *dto.OpenAIErrorWithStatusCode 
 	return err
 }
 
-func Relay(c *gin.Context) {
+// 消息处理前置操作
+func RelayPreview(ctx *gin.Context, userId int) bool {
+	return ModerateText(ctx, userId)
+}
 
+// 审核参数
+type ModerationBody struct {
+	Input string `json:"input"`
+}
+
+// 审核结果
+type ModerationResponse struct {
+	ID      string   `json:"id"`
+	Model   string   `json:"model"`
+	Results []Result `json:"results"`
+}
+
+type Result struct {
+	Flagged        bool           `json:"flagged"`
+	Categories     Categories     `json:"categories"`
+	CategoryScores CategoryScores `json:"category_scores"`
+}
+
+type Categories struct {
+	Sexual                bool `json:"sexual"`
+	Hate                  bool `json:"hate"`
+	Harassment            bool `json:"harassment"`
+	SelfHarm              bool `json:"self-harm"`
+	SexualMinors          bool `json:"sexual/minors"`
+	HateThreatening       bool `json:"hate/threatening"`
+	ViolenceGraphic       bool `json:"violence/graphic"`
+	SelfHarmIntent        bool `json:"self-harm/intent"`
+	SelfHarmInstructions  bool `json:"self-harm/instructions"`
+	HarassmentThreatening bool `json:"harassment/threatening"`
+	Violence              bool `json:"violence"`
+}
+
+type CategoryScores struct {
+	Sexual                float64 `json:"sexual"`
+	Hate                  float64 `json:"hate"`
+	Harassment            float64 `json:"harassment"`
+	SelfHarm              float64 `json:"self-harm"`
+	SexualMinors          float64 `json:"sexual/minors"`
+	HateThreatening       float64 `json:"hate/threatening"`
+	ViolenceGraphic       float64 `json:"violence/graphic"`
+	SelfHarmIntent        float64 `json:"self-harm/intent"`
+	SelfHarmInstructions  float64 `json:"self-harm/instructions"`
+	HarassmentThreatening float64 `json:"harassment/threatening"`
+	Violence              float64 `json:"violence"`
+}
+
+// 文字审查
+func ModerateText(ctx *gin.Context, userId int) bool {
+	content, _ := relay.BuildQuestion(ctx)
+	relayInfo := relaycommon.GenRelayInfo(ctx)
+	relayInfo.RequestURLPath = "/v1/moderations"
+	adaptor := relay.GetAdaptor(relayInfo.ApiType)
+	fullRequestURL, err := adaptor.GetRequestURL(relayInfo)
+	adaptor.Init(relayInfo)
+	var requestBody io.Reader
+	// 审查结果
+	moderateResult := true
+	if err == nil {
+		moderationBody := ModerationBody{
+			Input: content,
+		}
+		// 将审核参数对象编码为JSON
+		jsonData, err := json.Marshal(moderationBody)
+		if err == nil {
+			requestBody = bytes.NewBuffer(jsonData)
+			req, _ := http.NewRequest(ctx.Request.Method, fullRequestURL, requestBody)
+			_ = adaptor.SetupRequestHeader(ctx, req, relayInfo)
+			resp, _ := service.GetHttpClient().Do(req)
+			var moderationResponse ModerationResponse
+			if err := json.NewDecoder(resp.Body).Decode(&moderationResponse); err != nil {
+				log.Fatalf("Error decoding JSON response: %v", err)
+			}
+			// 遍历moderationResponse.Results，判断是否有违规内容
+			for _, result := range moderationResponse.Results {
+				// 任何内容违规都返回false
+				if result.Flagged {
+					moderateResult = false
+				}
+			}
+		}
+	}
+	return moderateResult
+}
+func Relay(c *gin.Context) {
 	userId := c.GetInt("id")
 	userById, err := model.GetUserById(userId, false)
-
+	// 前置操作（例如审查）
+	if !RelayPreview(c, userId) {
+		// TODO: 将审查出的违规结果返回给用户
+		return
+	}
 	if err != nil {
 		sendResponse(c, http.StatusInternalServerError, err.Error(), false)
 		return
