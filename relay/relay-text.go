@@ -367,14 +367,14 @@ func postConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, modelN
 		logContent += ", " + extraContent
 	}
 	other := service.GenerateTextOtherInfo(ctx, relayInfo, modelRatio, groupRatio, completionRatio, modelPrice)
-	content, _ := buildQuestion(ctx)
+	content, _ := BuildQuestion(ctx)
 
 	//fmt.Println(content)
 	model.RecordConsumeLog(ctx, relayInfo.UserId, relayInfo.ChannelId, promptTokens, completionTokens, logModel,
 		tokenName, quota, logContent, relayInfo.TokenId, userQuota, int(useTimeSeconds), relayInfo.IsStream, other, content)
 }
 
-func buildQuestion(c *gin.Context) (string, error) {
+func BuildQuestion(c *gin.Context) (string, error) {
 	// 读取并解析请求体中的 JSON 数据
 	var jsonData map[string]interface{}
 	if err := c.ShouldBindJSON(&jsonData); err != nil {
