@@ -14,6 +14,7 @@ type GeneralOpenAIRequest struct {
 	StreamOptions     *StreamOptions `json:"stream_options,omitempty"`
 	Suffix            string         `json:"suffix,omitempty"`
 	MaxTokens         uint           `json:"max_tokens,omitempty"`
+	MaxCompletionTokens uint           `json:"max_completion_tokens,omitempty"`
 	Temperature       float64        `json:"temperature,omitempty"`
 	TopP              float64        `json:"top_p,omitempty"`
 	TopK              int            `json:"top_k,omitempty"`
@@ -35,6 +36,7 @@ type GeneralOpenAIRequest struct {
 	TopLogProbs       int            `json:"top_logprobs,omitempty"`
 	Dimensions        int            `json:"dimensions,omitempty"`
 	ParallelToolCalls bool           `json:"parallel_Tool_Calls,omitempty"`
+	EncodingFormat    string         `json:"encoding_format,omitempty"`
 }
 
 type OpenAITools struct {
